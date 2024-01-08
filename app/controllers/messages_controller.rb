@@ -1,26 +1,27 @@
 class MessagesController < ApplicationController
   skip_before_action :authenticate_user!
+  before_action :set_conversation
   before_action :set_message, only: %i[show edit update destroy]
 
   def index
-    @messages = Message.all
+    @messages = @conversation.messages
   end
 
   def show
   end
 
   def new
-    @message = Message.new
+    @message = @conversation.messages.build
   end
 
   def edit
   end
 
   def create
-    @message = Message.new(message_params)
+    @message = @conversation.messages.build(message_params)
 
     if @message.save
-      redirect_to @message, notice: "Message was successfully created."
+      redirect_to [@conversation, @message], notice: "Message was successfully created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -28,7 +29,7 @@ class MessagesController < ApplicationController
 
   def update
     if @message.update(message_params)
-      redirect_to @message, notice: "Message was successfully updated.", status: :see_other
+      redirect_to [@conversation, @message], notice: "Message was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end
@@ -36,16 +37,20 @@ class MessagesController < ApplicationController
 
   def destroy
     @message.destroy!
-    redirect_to messages_url, notice: "Message was successfully destroyed.", status: :see_other
+    redirect_to conversation_messages_url(@conversation), notice: "Message was successfully destroyed.", status: :see_other
   end
 
   private
 
+  def set_conversation
+    @conversation = Conversation.find(params[:conversation_id])
+  end
+
   def set_message
-    @message = Message.find(params[:id])
+    @message = @conversation.messages.find(params[:id])
   end
 
   def message_params
-    params.require(:message).permit(:conversation_id, :role, :content_text)
+    params.require(:message).permit(:role, :content_text)
   end
 end
